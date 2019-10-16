@@ -12,7 +12,7 @@ initContainerImage:
   imagePullPolicy: IfNotPresent
 
 initContainerConfigImage:
-  repository: busybux
+  repository: busybox
   tag: 1.28
   imagePullPolicy: IfNotPresent
 

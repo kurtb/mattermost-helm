@@ -44,7 +44,13 @@ spec:
       - name: "init-config"
         image: "{{ .Values.initContainerConfigImage.repository }}:{{ .Values.initContainerConfigImage.tag }}"
         imagePullPolicy: {{ .Values.initContainerConfigImage.imagePullPolicy }}
-        command: ["sh", "-c", "[ ! -f /mattermost/config ] && cp /mattermost/k8s/config.json /mattermost/config"]
+        command: ["sh", "-c", "if [ ! -f /mattermost/config/config.json ]; then cp /mattermost/k8s/config.json /mattermost/config/config.json; fi; chown 2000:2000 /mattermost/config/config.json"]
+        volumeMounts:
+        - mountPath: /mattermost/config
+          name: mattermost-config
+        - mountPath: /mattermost/k8s/config.json
+          name: config-json
+          subPath: config.json
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -74,9 +80,6 @@ spec:
         volumeMounts:
         - mountPath: /mattermost/config
           name: mattermost-config
-        - mountPath: /mattermost/k8s/config.json
-          name: config-json
-          subPath: config.json
         - mountPath: /mattermost/data
           name: mattermost-data
         - mountPath: /mattermost/{{ trimPrefix "./" .Values.configJSON.PluginSettings.Directory }}
