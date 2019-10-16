@@ -3,12 +3,17 @@
 # Declare variables to be passed into your templates.
 image:
   repository: mattermost/mattermost-team-edition
-  tag: 5.13.2
+  tag: 5.15.1
   imagePullPolicy: IfNotPresent
 
 initContainerImage:
   repository: appropriate/curl
   tag: latest
+  imagePullPolicy: IfNotPresent
+
+initContainerConfigImage:
+  repository: busybux
+  tag: 1.28
   imagePullPolicy: IfNotPresent
 
 ## How many old ReplicaSets for Mattermost Deployment you want to retain
@@ -31,6 +36,15 @@ persistence:
     accessMode: ReadWriteOnce
   # existingClaim: ""
   plugins:
+    enabled: true
+    size: 1Gi
+    ## If defined, volume.beta.kubernetes.io/storage-class: <storageClass>
+    ## Default: volume.alpha.kubernetes.io/storage-class: default
+    ##
+    # storageClass:
+    accessMode: ReadWriteOnce
+  # existingClaim: ""
+  config:
     enabled: true
     size: 1Gi
     ## If defined, volume.beta.kubernetes.io/storage-class: <storageClass>

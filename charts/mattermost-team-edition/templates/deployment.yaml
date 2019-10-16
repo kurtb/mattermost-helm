@@ -41,6 +41,10 @@ spec:
       {{- if .Values.extraInitContainers }}
       {{- .Values.extraInitContainers | toYaml | nindent 6 }}
       {{- end }}
+      - name: "init-config"
+        image: "{{ .Values.initContainerConfigImage.repository }}:{{ .Values.initContainerConfigImage.tag }}"
+        imagePullPolicy: {{ .Values.initContainerConfigImage.imagePullPolicy }}
+        command: ["sh", "-c", "[ ! -f /mattermost/config ] && cp /mattermost/k8s/config.json /mattermost/config"]
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -68,7 +72,9 @@ spec:
             path: /api/v4/system/ping
             port: http
         volumeMounts:
-        - mountPath: /mattermost/config/config.json
+        - mountPath: /mattermost/config
+          name: mattermost-config
+        - mountPath: /mattermost/k8s/config.json
           name: config-json
           subPath: config.json
         - mountPath: /mattermost/data
@@ -95,6 +101,17 @@ spec:
           claimName: {{.Values.persistence.data.existingClaim }}
           {{ else }}
           claimName: {{ default (include "mattermost-team-edition.fullname" .) }}-plugins
+          {{ end }}
+      {{ else }}
+        emptyDir: {}
+      {{ end }}
+      - name: mattermost-config
+      {{ if .Values.persistence.config.enabled }}
+        persistentVolumeClaim:
+          {{ if .Values.persistence.config.existingClaim }}
+          claimName: {{.Values.persistence.config.existingClaim }}
+          {{ else }}
+          claimName: {{ default (include "mattermost-team-edition.fullname" .) }}-config
           {{ end }}
       {{ else }}
         emptyDir: {}
