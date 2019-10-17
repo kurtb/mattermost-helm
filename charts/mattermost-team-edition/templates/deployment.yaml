@@ -44,11 +44,19 @@ spec:
       - name: "init-config"
         image: "{{ .Values.initContainerConfigImage.repository }}:{{ .Values.initContainerConfigImage.tag }}"
         imagePullPolicy: {{ .Values.initContainerConfigImage.imagePullPolicy }}
-        command: ["sh", "-c", "if [ ! -f /mattermost/config/config.json ]; then cp /mattermost/k8s/config.json /mattermost/config/config.json; fi; chown 2000:2000 /mattermost/config/config.json"]
+        command: ["sh", "-c", "if [ ! -f /mattermost/config/config.json ]; then cp /k8s/config.json /mattermost/config/config.json; fi; chown -R 2000:2000 /mattermost"]
         volumeMounts:
         - mountPath: /mattermost/config
           name: mattermost-config
-        - mountPath: /mattermost/k8s/config.json
+        - mountPath: /mattermost/data
+          name: mattermost-data
+        - mountPath: /mattermost/logs
+          name: mattermost-logs
+        - mountPath: /mattermost/{{ trimPrefix "./" .Values.configJSON.PluginSettings.Directory }}
+          name: mattermost-plugins
+        - mountPath: /mattermost/{{ trimPrefix "./" .Values.configJSON.PluginSettings.ClientDirectory }}
+          name: mattermost-client-plugins
+        - mountPath: /k8s/config.json
           name: config-json
           subPath: config.json
       containers:
@@ -82,8 +90,12 @@ spec:
           name: mattermost-config
         - mountPath: /mattermost/data
           name: mattermost-data
+        - mountPath: /mattermost/logs
+          name: mattermost-logs
         - mountPath: /mattermost/{{ trimPrefix "./" .Values.configJSON.PluginSettings.Directory }}
           name: mattermost-plugins
+        - mountPath: /mattermost/{{ trimPrefix "./" .Values.configJSON.PluginSettings.ClientDirectory }}
+          name: mattermost-client-plugins
         resources:
           {{- .Values.resources | toYaml | nindent 12 }}
       volumes:
@@ -115,6 +127,28 @@ spec:
           claimName: {{.Values.persistence.config.existingClaim }}
           {{ else }}
           claimName: {{ default (include "mattermost-team-edition.fullname" .) }}-config
+          {{ end }}
+      {{ else }}
+        emptyDir: {}
+      {{ end }}
+      - name: mattermost-logs
+      {{ if .Values.persistence.logs.enabled }}
+        persistentVolumeClaim:
+          {{ if .Values.persistence.logs.existingClaim }}
+          claimName: {{.Values.persistence.logs.existingClaim }}
+          {{ else }}
+          claimName: {{ default (include "mattermost-team-edition.fullname" .) }}-logs
+          {{ end }}
+      {{ else }}
+        emptyDir: {}
+      {{ end }}
+      - name: mattermost-client-plugins
+      {{ if .Values.persistence.clientPlugins.enabled }}
+        persistentVolumeClaim:
+          {{ if .Values.persistence.clientPlugins.existingClaim }}
+          claimName: {{.Values.persistence.clientPlugins.existingClaim }}
+          {{ else }}
+          claimName: {{ default (include "mattermost-team-edition.fullname" .) }}-client-plugins
           {{ end }}
       {{ else }}
         emptyDir: {}

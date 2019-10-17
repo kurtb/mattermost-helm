@@ -1,0 +1,28 @@
+{{- if and .Values.persistence.clientPlugins.enabled (not .Values.persistence.clientPlugins.existingClaim) -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "mattermost-team-edition.fullname" . }}-client-plugins
+  labels:
+    app.kubernetes.io/name: {{ include "mattermost-team-edition.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "mattermost-team-edition.chart" . }}
+  annotations:
+  {{- range $key, $value := .Values.persistence.clientPlugins.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+spec:
+  accessModes:
+  - {{ .Values.persistence.clientPlugins.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.clientPlugins.size | quote }}
+{{- if .Values.persistence.clientPlugins.storageClass }}
+{{- if (eq "-" .Values.persistence.clientPlugins.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.persistence.clientPlugins.storageClass }}"
+{{- end }}
+{{- end }}
+{{- end }}
